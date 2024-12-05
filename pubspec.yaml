@@ -1,0 +1,35 @@
+name: GoSehat
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.1 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_image: ^4.1.1
+  cupertino_icons: ^1.0.8
+  mqtt_client: ^9.6.1
+  firebase_core: ^2.10.0  
+  firebase_auth: ^4.16.0   
+  intl: ^0.17.0
+  image_picker: ^0.8.5+3
+  firebase_storage: ^11.0.7
+  cloud_firestore: ^4.7.0 
+  shared_preferences: ^2.2.0 
+
+  
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/image/
