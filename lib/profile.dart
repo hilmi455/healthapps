@@ -1,8 +1,55 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'login.dart'; // Pastikan LoginScreen sudah diimport
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late String _imageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _imageUrl = 'assets/image/hati.png'; // Ganti dengan hati.png
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (userDoc.exists && userDoc['profilePicture'] != null) {
+          setState(() {
+            _imageUrl = userDoc['profilePicture'];
+          });
+        } else {
+          setState(() {
+            _imageUrl = 'assets/image/hati.png'; // Ganti dengan hati.png
+          });
+        }
+      }
+    } catch (e) {
+      print("Error loading profile image: $e");
+      setState(() {
+        _imageUrl = 'assets/image/hati.png'; // Ganti dengan hati.png
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    User? user = _auth.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -22,14 +69,18 @@ class ProfilePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Avatar dan nama
+              // Avatar
               CircleAvatar(
                 radius: 40,
-                backgroundImage: AssetImage('assets/image/avatar.png'), // Ganti dengan gambar avatar yang sesuai
+                backgroundImage: _imageUrl.startsWith('assets')
+                    ? AssetImage(_imageUrl)
+                    : NetworkImage(_imageUrl) as ImageProvider,
               ),
               SizedBox(height: 16),
+
+              SizedBox(height: 16),
               Text(
-                'Your Name',
+                'Go Sehat',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -37,7 +88,7 @@ class ProfilePage extends StatelessWidget {
                 ),
               ),
               Text(
-                'yourname@gmail.com',
+                user?.email ?? 'No email',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
@@ -45,98 +96,58 @@ class ProfilePage extends StatelessWidget {
               ),
               SizedBox(height: 32),
 
-              // Form input: First Name
               TextFormField(
+                initialValue: user?.email,
+                enabled: false,
                 decoration: InputDecoration(
-                  labelText: "What's your first name?",
+                  labelText: "Email",
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
                 ),
               ),
               SizedBox(height: 16),
 
-              // Form input: Last Name
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: "And your last name?",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Form input: Phone Number
-              TextFormField(
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: "Phone number",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Dropdown: Gender
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: "Select your gender",
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem(
-                    child: Text("Male"),
-                    value: "Male",
-                  ),
-                  DropdownMenuItem(
-                    child: Text("Female"),
-                    value: "Female",
-                  ),
-                  DropdownMenuItem(
-                    child: Text("Other"),
-                    value: "Other",
-                  ),
-                ],
-                onChanged: (value) {
-                  // Aksi ketika pilihan gender berubah
+              OutlinedButton(
+                onPressed: () {
+                  _showChangePasswordDialog(context);
                 },
-              ),
-              SizedBox(height: 16),
-
-              // Form input: Date of Birth
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: "What is your date of birth?",
-                  border: OutlineInputBorder(),
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  side: BorderSide(color: Colors.redAccent),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
                 ),
-                onTap: () async {
-                  // Aksi untuk membuka date picker
-                  FocusScope.of(context).requestFocus(new FocusNode());
-                  DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime(2100),
-                  );
-                  // Handle tanggal yang dipilih
-                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.lock, color: Colors.redAccent),
+                    SizedBox(width: 8),
+                    Text(
+                      'Ubah Password',
+                      style: TextStyle(fontSize: 16, color: Colors.redAccent),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: 32),
 
-              // Tombol Update Profile
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: OutlinedButton(
                   onPressed: () {
-                    // Aksi ketika tombol ditekan
+                    _showDeleteAccountDialog(context);
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent, // Ganti 'primary' dengan 'backgroundColor'
+                  style: OutlinedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: Colors.red),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
                     ),
                   ),
                   child: Text(
-                    'Update Profile',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
+                    'Hapus Akun',
+                    style: TextStyle(fontSize: 16, color: Colors.red),
                   ),
                 ),
               ),
@@ -144,6 +155,106 @@ class ProfilePage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    TextEditingController _newPasswordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Ubah Password"),
+          content: TextField(
+            controller: _newPasswordController,
+            obscureText: true,
+            decoration: InputDecoration(labelText: 'Password Baru'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Batal"),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await _auth.currentUser
+                      ?.updatePassword(_newPasswordController.text);
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Anda berhasil mengubah password"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Gagal mengubah password")),
+                  );
+                }
+              },
+              child: Text("Simpan"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Hapus Akun"),
+          content: Text(
+              "Apakah Anda yakin ingin menghapus akun Anda? Tindakan ini tidak dapat dibatalkan."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Batal"),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  // Menghapus akun
+                  await _auth.currentUser?.delete();
+
+                  // Logout setelah akun berhasil dihapus
+                  await _auth.signOut();
+
+                  // Menutup dialog
+                  Navigator.of(context).pop();
+
+                  // Menampilkan notifikasi bahwa akun berhasil dihapus
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Akun berhasil dihapus"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+
+                  // Kembali ke halaman login
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Gagal menghapus akun")),
+                  );
+                }
+              },
+              child: Text("Hapus"),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -1,9 +1,80 @@
 import 'package:flutter/material.dart';
-import 'profile.dart'; // Mengimpor halaman ProfilePage
-import 'about.dart'; // Mengimpor halaman AboutPage
-import 'cekjantung.dart'; // Mengimpor halaman CekJantungPage
+import 'profile.dart';
+import 'about.dart';
+import 'cekjantung.dart';
+import 'ceksuhutubuh.dart';
+import 'login.dart';
+import 'caramengukur.dart';
+import 'cara_suhu.dart';
+import 'p3k.dart';
+import 'sehat.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String _imageUrl = 'assets/image/hati.png'; // Default image
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  // Load image profile from Firebase Storage
+  Future<void> _loadProfileImage() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        String fileName = 'profile_pictures/${user.uid}.jpg';
+        Reference ref = FirebaseStorage.instance.ref().child(fileName);
+        String downloadUrl = await ref.getDownloadURL();
+
+        setState(() {
+          _imageUrl = downloadUrl;
+        });
+      }
+    } catch (e) {
+      print("Error loading image: $e");
+    }
+  }
+
+  // Fungsi untuk menampilkan dialog konfirmasi log out
+  void _showLogOutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Konfirmasi'),
+          content: Text('Apakah Anda yakin untuk keluar?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Menutup dialog
+              },
+              child: Text('Tidak'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut(); // Logout
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
+              },
+              child: Text('Ya'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -15,7 +86,7 @@ class HomePage extends StatelessWidget {
             return IconButton(
               icon: Icon(Icons.menu),
               onPressed: () {
-                Scaffold.of(context).openDrawer(); // Membuka Drawer
+                Scaffold.of(context).openDrawer();
               },
             );
           },
@@ -26,27 +97,16 @@ class HomePage extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: <Widget>[
             UserAccountsDrawerHeader(
-              accountName: Text("Username"), // Nama pengguna
-              accountEmail: null, // Jika tidak ingin menampilkan email
+              accountName: Text("Go Sehat"), // Nama akun
+              accountEmail: null,
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person, // Avatar pengguna
-                  size: 50.0,
-                  color: Colors.black87,
-                ),
+                backgroundImage: NetworkImage(
+                    _imageUrl), // Menampilkan gambar profil dari Firebase
               ),
               decoration: BoxDecoration(
-                color: Colors.pinkAccent, // Warna background header
+                color: Colors.pinkAccent,
               ),
-              otherAccountsPictures: [
-                IconButton(
-                  icon: Icon(Icons.close),
-                  onPressed: () {
-                    Navigator.pop(context); // Menutup drawer
-                  },
-                ),
-              ],
             ),
             ListTile(
               leading: Icon(Icons.person),
@@ -54,7 +114,7 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ProfilePage()), // Navigasi ke ProfilePage
+                  MaterialPageRoute(builder: (context) => ProfilePage()),
                 );
               },
             ),
@@ -64,135 +124,97 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => AboutPage()), // Navigasi ke AboutPage
+                  MaterialPageRoute(builder: (context) => AboutPage()),
                 );
               },
             ),
-            Divider(), // Garis pemisah
+            Divider(),
             ListTile(
               leading: Icon(Icons.logout),
               title: Text('Log Out'),
-              onTap: () {
-                // Aksi ketika item Log Out dipilih
-              },
+              onTap:
+                  _showLogOutDialog, // Menampilkan dialog konfirmasi saat klik Log Out
             ),
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Bagian Header
-            Text(
-              'Hallo username!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () {
-                // Aksi ketika tombol ditekan
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black, // Text color
-                side: BorderSide(color: Colors.black12), // Border
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30.0), // Rounded corner
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Go Sehat!',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
               ),
-              child: Text('Welcome'),
-            ),
-            SizedBox(height: 24),
-
-            // Bagian "What are you looking for?"
-            Text(
-              'What are you looking for?',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+              SizedBox(height: 24),
+              Text(
+                'Apa Yang Ingin Anda Cek?',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            SizedBox(height: 16),
+              SizedBox(height: 16),
 
-            // Card Cek Detak Jantung dengan navigasi ke CekJantungPage
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => CekJantungPage()), // Navigasi ke CekJantungPage
-                );
-              },
-              child: Container(
-                height: 133, // Tinggi card
-                width: double.infinity, // Lebar card sesuai dengan lebar halaman
-                child: Card(
-                  color: Color(0xFFDFF5F5), // Warna background card
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      children: [
-                        Image.asset(
-                          'assets/image/heartbeat.gif',
-                          height: 70, // Sesuaikan tinggi gambar
-                          width: 70,  // Sesuaikan lebar gambar
-                        ),
-                        SizedBox(width: 16), // Jarak antara gambar dan teks
-                        Text(
-                          'Cek Detak Jantung',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+              // Modularisasi card untuk cek
+              _buildCard(
+                  'Cek Detak Jantung', 'heartbeat.gif', CaraMengukurPage()),
+              _buildCard(
+                  'Cek Suhu Tubuh', 'temperature.gif', MeasurementGuidePage()),
+              _buildCard('Penanganan P3K', 'p3k.gif', P3KPage()),
+              _buildCard('Pola Hidup Sehat', 'protec.gif', SehatPage()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Fungsi untuk modularisasi card
+  Widget _buildCard(String title, String image, Widget targetPage) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  targetPage), // Navigasi ke halaman yang sesuai
+        );
+      },
+      child: Container(
+        height: 133,
+        width: double.infinity,
+        child: Card(
+          color: Color(0xFFDFF5F5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/image/$image',
+                  height: 70,
+                  width: 70,
+                ),
+                SizedBox(width: 16),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
+              ],
             ),
-            SizedBox(height: 24), // Tambahkan lebih banyak ruang di antara card
-
-            // Card Cek Suhu Tubuh
-            Container(
-              height: 133, // Tinggi card
-              width: double.infinity, // Lebar card sesuai dengan lebar halaman
-              child: Card(
-                color: Color(0xFFDFF5F5), // Warna background card
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        'assets/image/temperature.gif',
-                        height: 70, // Sesuaikan tinggi gambar
-                        width: 70,  // Sesuaikan lebar gambar
-                      ),
-                      SizedBox(width: 16), // Jarak antara gambar dan teks
-                      Text(
-                        'Cek Suhu Tubuh',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
